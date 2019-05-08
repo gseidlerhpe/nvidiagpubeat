@@ -24,7 +24,7 @@
 
 nvidiagpubeat:
   # Defines how often an event is sent to the output
-  period: 1s
+  period: 5s
   query: "utilization.gpu,utilization.memory,memory.total,memory.free,memory.used,temperature.gpu,pstate"
   env: "test"
   # env can be test or production. test is for test purposes to evaluate funcationality of this beat. Switch to production

@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/elastic/beats/libbeat/common"
+	"github.com/elastic/beats/libbeat/logp"
 )
 
 //GPUUtilization provides interface to utilization metrics and state of GPU.
@@ -56,6 +57,13 @@ func (g Utilization) run(cmd *exec.Cmd, gpuCount int, query string, action Actio
 	reader := action.start(cmd)
 	gpuIndex := 0
 	events := make([]common.MapStr, gpuCount, 2*gpuCount)
+	bdLink := newBDLink()
+	bdLinkCmd := bdLink.command()
+	links, err := bdLink.run(bdLinkCmd, NewLocal())
+	if err != nil {
+		return nil, errors.New("Unable to fetch node symbolic links: Error " + err.Error())	
+	}
+	logp.Debug("nvidiagpubeat", "NodeLinks: %v", links)
 
 	for {
 		line, err := reader.ReadString('\n')
@@ -81,8 +89,14 @@ func (g Utilization) run(cmd *exec.Cmd, gpuCount int, query string, action Actio
 		if err == io.EOF {
 			break
 		}
+
+		linkName, ok := links[gpuIndex]
+		if !ok {
+			linkName = ""
+		} 
 		headers := strings.Split(query, ",")
 		event := common.MapStr{
+			"linkName": linkName,
 			"gpuIndex": gpuIndex,
 			"type":     "nvidiagpubeat",
 		}
